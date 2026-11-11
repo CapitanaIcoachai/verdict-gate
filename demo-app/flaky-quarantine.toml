@@ -1,0 +1,8 @@
+# Tests known to be flaky, with an expiry. The Monday monitor re-measures them and the flow
+# opens an issue for the expired ones; a FIXED verdict on an MR removes the entry.
+[[test]]
+id = "test_checkout.TestTotal.test_total"
+file = "demo-app/py-shop/test_checkout.py"
+command = "cd demo-app/py-shop && python3 -m unittest -q test_checkout.TestTotal.test_total"
+added = 2026-10-08
+expires = 2026-11-08

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "verdict-gate": {
+      "command": "python3",
+      "args": ["mcp/verdict_gate_mcp.py"]
+    }
+  }
+}

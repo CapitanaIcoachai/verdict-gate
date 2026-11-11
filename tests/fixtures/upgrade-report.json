@@ -1,0 +1,4 @@
+{"project":{"name":"legacy-app"},"results":[
+ {"name":"express","from":"4.18.2","to":"5.2.1","verdict":"BREAKS","issues":[
+   {"severity":"breaks","kind":"removed-member","title":"removed","path":"express().get(-> req).param","message":"declared in 4.x types, absent in 5.x","sites":[{"file":"src/server.js","line":9}],"suggestion":"use req.params / req.query / req.body explicitly"}]},
+ {"name":"axios","from":"1.6.0","to":"1.20.0","verdict":"CLEAR","issues":[],"stats":{"uses":1,"verified":1}}]}

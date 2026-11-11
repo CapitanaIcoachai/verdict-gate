@@ -1,0 +1,21 @@
+{
+  "name": "upgrade-radar",
+  "version": "0.1.0",
+  "description": "Tells you which dependency upgrades will break YOUR code, by diffing the real APIs of two published versions against your actual call sites.",
+  "type": "module",
+  "bin": {
+    "upgrade-radar": "bin/upgrade-radar.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo": "node bin/upgrade-radar.mjs demo --html examples/demo-report.html"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "semver": "^7.8.5",
+    "typescript": "~5.9"
+  }
+}

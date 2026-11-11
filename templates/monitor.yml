@@ -1,0 +1,17 @@
+# Scheduled pipeline (every Monday): re-measures quarantined tests and outdated dependencies on the main branch.
+verdict-gate:monitor:
+  stage: test
+  image: python:3.12
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+  script:
+    - apt-get update -qq && apt-get install -y -qq nodejs npm > /dev/null && (cd verifiers/upgrade && npm ci --silent)
+    - set +e
+    - python3 verifiers/flaky/fixorfluke.py compare --repo . --base "$CI_COMMIT_SHA" --head "$CI_COMMIT_SHA" --test "cd demo-app/py-shop && python3 -m unittest -q test_checkout.TestTotal.test_total" --test-id quarantine --runs 100 --looks 1 --json monitor-flaky.json
+    - node verifiers/upgrade/verdict.mjs scan demo-app/node-service --json monitor-upgrade.json
+    - set -e
+    - python3 schema/merge.py monitor-flaky.json monitor-upgrade.json > monitor.json
+    - echo "VERDICT $(cat monitor.json)"
+  artifacts:
+    when: always
+    paths: [monitor-flaky.json, monitor-upgrade.json, monitor.json]

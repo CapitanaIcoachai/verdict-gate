@@ -1,0 +1,9 @@
+{
+  "save": "Salva le modifiche",
+  "greet": "Ciao {name}, <b>bentornato</b>",
+  "delete": "Elimina il file",
+  "count": "%d elementi selezionati",
+  "ok": "OK",
+  "lines": "Prima riga\nSeconda riga",
+  "retry": "Riprova"
+}

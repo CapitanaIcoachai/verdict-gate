@@ -1,0 +1,12 @@
+{
+  "start": "python3 app.py --port {port}",
+  "health": "/health",
+  "timeout": 15,
+  "requests": [
+    {"method": "GET", "path": "/users/1"},
+    {"method": "GET", "path": "/users/abc"},
+    {"method": "GET", "path": "/orders"},
+    {"method": "POST", "path": "/orders", "body": {"sku": "A1"}},
+    {"method": "GET", "path": "/health", "compare_values": true}
+  ]
+}

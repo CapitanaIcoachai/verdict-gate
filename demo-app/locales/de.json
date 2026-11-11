@@ -1,0 +1,8 @@
+{
+  "save": "Save changes",
+  "greet": "Hallo {Name}, willkommen zurück",
+  "delete": "Die ausgewählte Datei aus dem aktuellen Ordner endgültig löschen",
+  "count": "%d Elemente ausgewählt",
+  "ok": "OK",
+  "lines": "Erste Zeile Zweite Zeile"
+}

@@ -1,0 +1,57 @@
+# Verdict Gate CI/CD component. Include from .gitlab-ci.yml:
+#   include:
+#     - local: templates/verify.yml
+# The verifier is chosen from the merge request labels: upgrade | flaky-fix | flaky-bisect | i18n | perf | api.
+spec:
+  inputs:
+    stage: { default: test }
+    runs:  { default: "100" }
+---
+verdict-gate:verify:
+  stage: $[[ inputs.stage ]]
+  image: python:3.12
+  variables:
+    GIT_DEPTH: "0"
+    FOF_RUNS: $[[ inputs.runs ]]
+    FOF_TEST: "test_checkout.TestTotal.test_total"              # flaky-fix: test id (override per project)
+    FOF_TEST_CMD: "cd demo-app/py-shop && python3 -m unittest -q test_checkout.TestTotal.test_total"
+    FOF_TEST_FILE: "demo-app/py-shop/test_checkout.py"
+    VG_BENCH_CMD: "cd demo-app/py-bench && python3 bench.py"   # perf: override per project
+    VG_BENCH_FILE: "demo-app/py-bench/bench.py"
+    VG_API_CONTRACT: "demo-app/py-api/api-contract.json"       # api: contract file
+    VG_GOOD_REF: "$CI_MERGE_REQUEST_DIFF_BASE_SHA"              # flaky-bisect: last known stable ref
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(upgrade|flaky-fix|flaky-bisect|i18n|perf|api)/'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^mr-(upgrade|flaky|i18n|perf|api)/'
+  before_script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - |
+      case "$CI_MERGE_REQUEST_LABELS $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" in *upgrade*)
+        apt-get update -qq && apt-get install -y -qq curl ca-certificates > /dev/null && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1 && apt-get install -y -qq nodejs > /dev/null && node --version && (cd verifiers/upgrade && npm ci --silent) ;;
+      esac
+  script:
+    - |
+      set +e
+      # the verifier comes from the MR label, or from the source branch name (mr-flaky-*, mr-upgrade-*, ...)
+      SEL="$CI_MERGE_REQUEST_LABELS"
+      case "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" in
+        mr-flaky-bisect*) SEL="$SEL flaky-bisect" ;; mr-flaky*) SEL="$SEL flaky-fix" ;; mr-upgrade*) SEL="$SEL upgrade" ;;
+        mr-i18n*) SEL="$SEL i18n" ;; mr-perf*) SEL="$SEL perf" ;; mr-api*) SEL="$SEL api" ;;
+      esac
+      case "$SEL" in
+        *upgrade*)   node verifiers/upgrade/verdict.mjs mr --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --dir demo-app/node-service --json verdict.json ;;
+        *flaky-fix*) python3 verifiers/flaky/fixorfluke.py ci-verify --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --runs "$FOF_RUNS" --json verdict.json ;;
+        *i18n*)      python3 verifiers/i18n/i18n_gate.py --source demo-app/locales/en.json --targets 'demo-app/locales/*.json' --glossary OK --json verdict.json ;;
+        *perf*)      python3 verifiers/perf/speedorfluke.py compare --repo . --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --bench "$VG_BENCH_CMD" --metric --bench-file "$VG_BENCH_FILE" --runs 30 --json verdict.json ;;
+        *flaky-bisect*) python3 verifiers/flaky/fixorfluke.py bisect --repo . --good "$VG_GOOD_REF" --bad "$CI_COMMIT_SHA" --test "$FOF_TEST_CMD" --json verdict.json ;;
+        *api*)       python3 verifiers/api/contractdiff.py compare --repo . --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --config "$VG_API_CONTRACT" --json verdict.json ;;
+      esac
+      set -e
+    - python3 schema/check.py verdict.json
+    - python3 schema/exit.py verdict.json
+  artifacts:
+    when: always
+    paths: [verdict.json]
+    expose_as: "Verdict Gate verdict"
+  allow_failure:
+    exit_codes: [3]

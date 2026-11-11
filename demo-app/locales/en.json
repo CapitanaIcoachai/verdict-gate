@@ -1,0 +1,9 @@
+{
+  "save": "Save changes",
+  "greet": "Hello {name}, <b>welcome back</b>",
+  "delete": "Delete file",
+  "count": "%d items selected",
+  "ok": "OK",
+  "lines": "First line\nSecond line",
+  "retry": "Try again"
+}

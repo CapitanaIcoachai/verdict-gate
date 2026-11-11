@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verdict-gate/1",
+  "title": "Verdict Gate verdict",
+  "description": "One object per verifier run. Printed to the CI job log as a single line prefixed with 'VERDICT '.",
+  "type": "object",
+  "required": [
+    "schema",
+    "verifier",
+    "outcome",
+    "detail",
+    "evidence",
+    "guards",
+    "needs_human"
+  ],
+  "properties": {
+    "schema": {
+      "const": "verdict-gate/1"
+    },
+    "verifier": {
+      "type": "string",
+      "enum": [
+        "upgrade",
+        "flaky",
+        "i18n",
+        "perf",
+        "api"
+      ]
+    },
+    "target": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "What was judged: package and versions, test id, catalog."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "UNSURE",
+        "BROKEN"
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "description": "The verifier's own verdict name, kept verbatim."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Facts a human can re-check: file:line, counts, p-values, bounds."
+    },
+    "guards": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Anti-cheat findings. A PASS with guards needs a human."
+    },
+    "needs_human": {
+      "type": "boolean"
+    },
+    "fix_hint": {
+      "type": "string"
+    },
+    "limits": {
+      "type": "string",
+      "description": "What this verifier cannot see. Printed in every report."
+    }
+  },
+  "additionalProperties": false
+}

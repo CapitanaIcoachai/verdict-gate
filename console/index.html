@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verdict Gate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: fascia di testa con marchio e gradiente; strumento a schede; ingressi a sinistra, verdetto a destra in una scheda rialzata. */
+:root{
+  --bg:#eef2f3; --panel:#ffffff; --fg:#14201f; --muted:#5c6967; --line:#d5dddb; --line-soft:#e6ebe9;
+  --accent:#0f6e8c; --accent-2:#0a4d63; --accent-soft:#e0eff4; --accent-ink:#ffffff;
+  --ok:#1f8a4c; --ok-soft:#e1f3e8; --bad:#b8281f; --bad-soft:#fae4e2; --warn:#9a6400; --warn-soft:#fbf0d6; --grey:#66706d; --grey-soft:#e7ebe9;
+  --shadow:0 1px 2px rgba(20,32,31,.06),0 8px 24px rgba(20,32,31,.08);
+  --display:"Barlow Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101615; --panel:#192120; --fg:#e9edeb; --muted:#9fa9a6; --line:#2d3936; --line-soft:#222c2a;
+  --accent:#5fb6d1; --accent-2:#0f6e8c; --accent-soft:#17303a; --accent-ink:#ffffff;
+  --ok:#6cc98a; --ok-soft:#163023; --bad:#f08a82; --bad-soft:#3a1d1a; --warn:#e8b55a; --warn-soft:#352a12; --grey:#9aa39f; --grey-soft:#252e2c;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#101615; --panel:#192120; --fg:#e9edeb; --muted:#9fa9a6; --line:#2d3936; --line-soft:#222c2a;
+  --accent:#5fb6d1; --accent-2:#0f6e8c; --accent-soft:#17303a; --accent-ink:#ffffff;
+  --ok:#6cc98a; --ok-soft:#163023; --bad:#f08a82; --bad-soft:#3a1d1a; --warn:#e8b55a; --warn-soft:#352a12; --grey:#9aa39f; --grey-soft:#252e2c;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px rgba(0,0,0,.35); color-scheme:dark }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.hero{background:linear-gradient(120deg,#0f6e8c 0%,#0a4d63 60%,#083d50 100%);color:#fff}
+.hero .wrap{padding-block:22px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;padding-block:22px 20px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.brand svg{width:64px;height:64px;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#bfe0ea}
+h1{font-family:var(--display);font-size:50px;line-height:.9;margin:4px 0 6px;letter-spacing:.01em;color:#fff}
+.thesis{color:#d7ecf2;margin:0;max-width:62ch;font-size:14.5px}
+.lang{display:inline-flex;border:1px solid rgba(255,255,255,.35);border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}
+.lang button{font:600 13px var(--body);background:none;border:0;padding:7px 15px;color:#d7ecf2;cursor:pointer}
+.lang button[aria-pressed="true"]{background:#fff;color:var(--accent-2)}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:20px;padding-block:0 60px}
+.hero .wrap{padding-block:22px 20px}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;display:flex;gap:6px;overflow-x:auto;padding-block:12px 10px;scrollbar-width:none;border-bottom:1px solid var(--line-soft)}
+nav.tabs button{font:600 14px var(--body);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 16px;color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+nav.tabs button .ic{width:16px;height:16px;flex:none}
+nav.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:var(--shadow)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.pane{padding-block:18px}
+h2{font-family:var(--display);font-size:34px;line-height:1;margin:8px 0 4px;letter-spacing:.005em}
+h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+p{margin:0 0 10px;max-width:80ch}
+.intro{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:12px}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.panel.result{box-shadow:var(--shadow);border-color:transparent}
+label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=number],textarea,select{width:100%;font:13.5px var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+textarea{min-height:112px;resize:vertical;line-height:1.45}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{font:600 14px var(--body);padding:9px 16px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.sec{background:none;color:var(--accent)}
+.btn.ghost{background:none;color:var(--muted);border-color:var(--line)}
+.btn:hover{filter:brightness(1.06)}
+.btn:disabled{opacity:.5;cursor:default}
+.out{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;margin:2px 0 10px;background:var(--grey-soft);color:var(--grey)}
+.out .big{font-family:var(--display);font-size:40px;line-height:1;letter-spacing:.02em}
+.out .ic{width:34px;height:34px;flex:none}
+.out.PASS{background:var(--ok-soft);color:var(--ok)}
+.out.FAIL{background:var(--bad-soft);color:var(--bad)}
+.out.UNSURE{background:var(--warn-soft);color:var(--warn)}
+.detail{font-weight:600;margin-bottom:10px;font-size:15.5px}
+.tbl{overflow-x:auto;border:1px solid var(--line-soft);border-radius:10px;margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.5;background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px;overflow-x:auto;margin:6px 0;white-space:pre-wrap;word-break:break-word}
+code{font-family:var(--mono);font-size:.92em}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:999px}
+.pill.bad{color:var(--bad);background:var(--bad-soft)} .pill.warn{color:var(--warn);background:var(--warn-soft)} .pill.ok{color:var(--ok);background:var(--ok-soft)} .pill.acc{color:var(--accent);background:var(--accent-soft)}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.limits{border-left:4px solid var(--warn);border-radius:0 8px 8px 0;padding:8px 12px;background:var(--warn-soft);font-size:13px;margin-top:10px}
+.empty{color:var(--muted);font-style:italic}
+.guards{margin:6px 0;padding-left:20px}
+.guards li{color:var(--bad);font-weight:500}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:var(--shadow)}
+.toast.show{opacity:1}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line-soft);margin-top:28px;padding-top:12px}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <div class="brand"><svg viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" rx="40" fill="#ffffff"/><rect x="36" y="48" width="18" height="116" rx="4" fill="#0f6e8c"/><rect x="146" y="48" width="18" height="116" rx="4" fill="#0f6e8c"/><rect x="36" y="36" width="128" height="18" rx="4" fill="#0f6e8c"/><path d="M56 112 L92 146 L170 70" fill="none" stroke="#1f9d55" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></svg><div>
+    <div class="eyebrow" data-t="eyebrow"></div>
+    <h1>Verdict Gate</h1>
+    <p class="thesis" data-t="thesis"></p>
+  </div></div>
+  <div class="lang" role="group" aria-label="Language / Lingua"><button id="lang-en" aria-pressed="true">English</button><button id="lang-it" aria-pressed="false">Italiano</button></div>
+</div></header>
+<div class="wrap">
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="flaky" aria-selected="true"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12l3-3 3 2 3-5 3 2"/></svg><span data-t="tab_flaky"></span></button>
+  <button role="tab" data-tab="upgrade" aria-selected="false"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 13V3M4 7l4-4 4 4"/></svg><span data-t="tab_upgrade"></span></button>
+  <button role="tab" data-tab="i18n" aria-selected="false"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2.5 3 2.5 9 0 12M8 2c-2.5 3-2.5 9 0 12"/></svg><span data-t="tab_i18n"></span></button>
+  <button role="tab" data-tab="gitlab" aria-selected="false"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h10v10H3zM6 7l2 2 3-4"/></svg><span data-t="tab_gitlab"></span></button>
+</nav>
+
+<!-- ================= FLAKY ================= -->
+<section class="pane" id="flaky" role="tabpanel">
+  <h2 data-t="f_h"></h2>
+  <p class="intro" data-t="f_intro"></p>
+  <div class="grid">
+    <div class="panel">
+      <h3 data-t="f_counts"></h3>
+      <div class="row">
+        <div><label for="f-br" data-t="f_base_runs"></label><input type="number" id="f-br" min="0" value="100"></div>
+        <div><label for="f-bf" data-t="f_base_fail"></label><input type="number" id="f-bf" min="0" value="8"></div>
+        <div><label for="f-hr" data-t="f_head_runs"></label><input type="number" id="f-hr" min="0" value="100"></div>
+        <div><label for="f-hf" data-t="f_head_fail"></label><input type="number" id="f-hf" min="0" value="6"></div>
+      </div>
+      <div class="row">
+        <div><label for="f-alpha" data-t="f_alpha"></label><input type="number" id="f-alpha" step="0.01" min="0.001" max="0.5" value="0.05"></div>
+        <div><label for="f-looks" data-t="f_looks"></label><input type="number" id="f-looks" min="1" max="10" value="3"></div>
+        <div><label for="f-target" data-t="f_target"></label><input type="number" id="f-target" step="0.01" min="0.001" max="0.5" value="0.05"></div>
+      </div>
+      <label for="f-log" data-t="f_log"></label>
+      <textarea id="f-log" placeholder="base pass&#10;head fail&#10;base fail&#10;head pass"></textarea>
+      <label for="f-diff" data-t="f_diff"></label>
+      <textarea id="f-diff" placeholder="--- a/tests/test_checkout.py&#10;+++ b/tests/test_checkout.py&#10;-    assert total == 42&#10;+    assert total >= 40"></textarea>
+      <label><input type="checkbox" id="f-broken"> <span data-t="f_broken"></span></label>
+      <div class="btns">
+        <button class="btn" id="f-run" data-t="btn_verify"></button>
+        <button class="btn sec" id="f-sim" data-t="f_sim"></button>
+        <button class="btn ghost" id="f-ex1" data-t="f_ex1"></button>
+        <button class="btn ghost" id="f-ex2" data-t="f_ex2"></button>
+        <button class="btn ghost" id="f-ex3" data-t="f_ex3"></button>
+      </div>
+    </div>
+    <div class="panel result" id="f-out"><p class="empty" data-t="empty"></p></div>
+  </div>
+</section>
+
+<!-- ================= UPGRADE ================= -->
+<section class="pane" id="upgrade" role="tabpanel" hidden>
+  <h2 data-t="u_h"></h2>
+  <p class="intro" data-t="u_intro"></p>
+  <div class="grid">
+    <div class="panel">
+      <div class="row">
+        <div><label for="u-name" data-t="u_name"></label><input type="text" id="u-name" value="chalk"></div>
+        <div><label for="u-old" data-t="u_old"></label><input type="text" id="u-old" value="4.1.2"></div>
+        <div><label for="u-new" data-t="u_new"></label><input type="text" id="u-new" placeholder="latest"></div>
+      </div>
+      <label for="u-code" data-t="u_code"></label>
+      <textarea id="u-code">const chalk = require('chalk');
+const { v4: uuidv4 } = require('uuid/v4');
+console.log(chalk.red('error'), uuidv4());</textarea>
+      <div class="btns">
+        <button class="btn" id="u-fetch" data-t="u_fetch"></button>
+        <button class="btn sec" id="u-manual" data-t="u_manual"></button>
+        <button class="btn ghost" id="u-ex" data-t="u_ex"></button>
+      </div>
+      <div id="u-manual-box" hidden>
+        <label for="u-oldpkg" data-t="u_oldpkg"></label><textarea id="u-oldpkg"></textarea>
+        <label for="u-newpkg" data-t="u_newpkg"></label><textarea id="u-newpkg"></textarea>
+        <div class="btns"><button class="btn" id="u-run" data-t="btn_verify"></button></div>
+      </div>
+      <p class="note" data-t="u_note"></p>
+    </div>
+    <div class="panel result" id="u-out"><p class="empty" data-t="empty"></p></div>
+  </div>
+</section>
+
+<!-- ================= I18N ================= -->
+<section class="pane" id="i18n" role="tabpanel" hidden>
+  <h2 data-t="i_h"></h2>
+  <p class="intro" data-t="i_intro"></p>
+  <div class="grid">
+    <div class="panel">
+      <label for="i-src" data-t="i_src"></label>
+      <textarea id="i-src">{
+  "save": "Save changes",
+  "greet": "Hello {name}, <b>welcome back</b>",
+  "delete": "Delete file",
+  "count": "%d items selected",
+  "ok": "OK",
+  "lines": "First line\nSecond line"
+}</textarea>
+      <label for="i-tgt" data-t="i_tgt"></label>
+      <textarea id="i-tgt">{
+  "save": "Save changes",
+  "greet": "Ciao {nome}, bentornato",
+  "delete": "Elimina il file selezionato dalla cartella corrente",
+  "count": "%d elementi selezionati",
+  "ok": "OK",
+  "lines": "Prima riga Seconda riga"
+}</textarea>
+      <div class="row">
+        <div><label for="i-ratio" data-t="i_ratio"></label><input type="number" id="i-ratio" step="0.1" min="1" value="1.6"></div>
+        <div><label for="i-gloss" data-t="i_gloss"></label><input type="text" id="i-gloss" value="OK"></div>
+      </div>
+      <div class="btns">
+        <button class="btn" id="i-run" data-t="btn_verify"></button>
+        <button class="btn ghost" id="i-ex" data-t="i_ex"></button>
+      </div>
+    </div>
+    <div class="panel result" id="i-out"><p class="empty" data-t="empty"></p></div>
+  </div>
+</section>
+
+<!-- ================= GITLAB ================= -->
+<section class="pane" id="gitlab" role="tabpanel" hidden>
+  <h2 data-t="g_h"></h2>
+  <p class="intro" data-t="g_intro"></p>
+  <div class="grid">
+    <div class="panel">
+      <h3 data-t="g_last"></h3>
+      <pre id="g-verdict" class="empty" data-t="g_none"></pre>
+      <div class="btns">
+        <button class="btn sec" id="g-copy-verdict" data-t="btn_copy"></button>
+        <button class="btn sec" id="g-copy-md" data-t="g_copy_md"></button>
+        <button class="btn ghost" id="g-dl-json" data-t="g_dl_json"></button>
+      </div>
+      <h3 data-t="g_md"></h3>
+      <pre id="g-md" class="empty" data-t="g_none"></pre>
+    </div>
+    <div class="panel">
+      <h3 data-t="g_files"></h3>
+      <div class="row">
+        <div><label for="g-file" data-t="g_pick"></label>
+          <select id="g-file">
+            <option value="verify">templates/verify.yml</option>
+            <option value="monitor">templates/monitor.yml</option>
+            <option value="flow">.gitlab/duo/flows/verdict-gate.yaml</option>
+            <option value="policy">verdict-gate.toml</option>
+            <option value="schema">schema/verdict-v1.json</option>
+          </select></div>
+      </div>
+      <pre id="g-file-body"></pre>
+      <div class="btns">
+        <button class="btn sec" id="g-copy-file" data-t="btn_copy"></button>
+        <button class="btn ghost" id="g-dl-file" data-t="g_dl_file"></button>
+      </div>
+      <p class="note" data-t="g_note"></p>
+    </div>
+  </div>
+</section>
+
+<footer data-t="footer"></footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Verdict Gate core: deterministic verifiers. No dependencies.
+var VG = (function(){
+  // ---------- statistics (flaky verifier) ----------
+  function lnGamma(z){ // Lanczos
+    var g=7, c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+    if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-lnGamma(1-z);
+    z-=1; var x=c[0]; for(var i=1;i<g+2;i++) x+=c[i]/(z+i);
+    var t=z+g+0.5; return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+  }
+  function lnChoose(n,k){ return lnGamma(n+1)-lnGamma(k+1)-lnGamma(n-k+1); }
+  // one-sided Fisher exact: P(head failures <= observed | margins), i.e. evidence that head fails less than base
+  function fisherOneSided(baseFail, baseRuns, headFail, headRuns){
+    var K=baseFail+headFail, N=baseRuns+headRuns, n=headRuns;
+    var lo=Math.max(0,K-(N-n)), hi=Math.min(K,n), p=0;
+    for(var x=lo;x<=headFail;x++){ p+=Math.exp(lnChoose(K,x)+lnChoose(N-K,n-x)-lnChoose(N,n)); }
+    return Math.min(1,p);
+  }
+  function binomCdf(k,n,p){ var s=0; for(var i=0;i<=k;i++) s+=Math.exp(lnChoose(n,i)+i*Math.log(p)+(n-i)*Math.log(1-p)); return s; }
+  // Clopper-Pearson upper bound (one-sided, conf)
+  function upperBound(fail,n,conf){
+    if(fail>=n) return 1;
+    var a=1-conf, lo=fail/n, hi=1, mid;
+    for(var i=0;i<60;i++){ mid=(lo+hi)/2; if(binomCdf(fail,n,mid)>a) lo=mid; else hi=mid; }
+    return hi;
+  }
+  function runsNeeded(target,conf){ return Math.ceil(Math.log(1-conf)/Math.log(1-target)); }
+
+  function flakyVerdict(o){
+    // o: baseRuns, baseFail, headRuns, headFail, alpha, target, looks, lookIndex, conf, brokenBase, brokenHead, guards[]
+    var alpha=(o.alpha||0.05)/(o.looks||1), conf=o.conf||0.95, target=o.target||0.05;
+    var res={verifier:"flaky", alphaUsed:alpha};
+    if(o.brokenBase||o.brokenHead){ res.outcome="BROKEN"; res.detail="BROKEN: "+(o.brokenBase?"base":"head")+" fails every early run with the same error"; return fin(res,o); }
+    if(o.baseFail===0){ res.outcome="UNSURE"; res.detail="NOT REPRODUCED: 0 failures on base out of "+o.baseRuns; return fin(res,o); }
+    var p=fisherOneSided(o.baseFail,o.baseRuns,o.headFail,o.headRuns); res.p=p;
+    if(o.headFail>0){
+      res.outcome="FAIL";
+      res.detail= p<alpha ? "NOT FIXED, better but still flaky" : "NOT FIXED, no measurable effect";
+      return fin(res,o);
+    }
+    var ub=upperBound(0,o.headRuns,conf); res.upperBound=ub;
+    if(p<alpha && ub<=target){ res.outcome="PASS"; res.detail="FIXED: residual failure rate below "+(target*100).toFixed(0)+"% at "+(conf*100).toFixed(0)+"% confidence"; }
+    else { res.outcome="UNSURE"; res.detail="NEED MORE RUNS: "+runsNeeded(target,conf)+" clean head runs needed for "+(target*100).toFixed(0)+"%"; res.runsNeeded=runsNeeded(target,conf); }
+    return fin(res,o);
+  }
+  function fin(res,o){
+    res.evidence=[{where:"base",runs:o.baseRuns,failures:o.baseFail},{where:"head",runs:o.headRuns,failures:o.headFail}];
+    if(res.p!==undefined) res.evidence.push({p:+res.p.toPrecision(3)});
+    if(res.upperBound!==undefined) res.evidence.push({upper_bound_95:+(res.upperBound).toPrecision(3)});
+    res.guards=o.guards||[];
+    if(res.outcome==="PASS" && res.guards.length){ res.detail="FIXED, BUT TEST WEAKENED ("+res.guards.join("; ")+")"; res.needs_human=true; }
+    else res.needs_human = res.outcome!=="PASS";
+    return res;
+  }
+  // weakened-test guard on a unified diff of test files / retry configs
+  function diffGuard(diff){
+    var g=[], removedAssert=0, addedAssert=0;
+    var lines=(diff||"").split(/\r?\n/);
+    lines.forEach(function(l){
+      if(/^\+\+\+|^---/.test(l)) return;
+      var add=l[0]==='+', del=l[0]==='-', body=l.slice(1);
+      if(del && /\b(assert|expect\(|should\.|t\.ok|t\.equal|assertEquals)/.test(body)) removedAssert++;
+      if(add && /\b(assert|expect\(|should\.|t\.ok|t\.equal|assertEquals)/.test(body)) addedAssert++;
+      if(add && /(pytest\.mark\.(skip|xfail)|@skip|\.skip\(|test\.skip|xit\(|xtest\(|it\.skip|unittest\.skip|t\.Skip\()/.test(body)) g.push("skip/xfail added");
+      if(add && /(reruns|rerunfailures|retries\s*[:=]|retry\s*[:=]|jest\.retryTimes|flaky|@retry|test\.retry)/i.test(body)) g.push("retry added");
+      if(add && /(timeout\s*[:=(]\s*\d+|setTimeout\(\s*\d{4,}|time\.sleep\(|sleep\()/i.test(body)) g.push("timeout raised or sleep added");
+      if(add && /(assertAlmostEqual|toBeCloseTo|approx|pytest\.approx|tolerance|delta=)/i.test(body)) g.push("assertion loosened (approximate compare)");
+      if(add && /\bassert|expect\(/.test(body) && removedAssert>0 && (/(>=|<=|!=|!==)/.test(body) || /\b(in|includes|contains|toContain|toBeTruthy|is not None|isNotNone)\b/.test(body))) g.push("assertion loosened (weaker operator)");
+    });
+    if(removedAssert>addedAssert) g.push("assertion removed");
+    return g.filter(function(x,i,a){return a.indexOf(x)===i;});
+  }
+  // simulate ABAB runs with true failure rates (demo without a real test)
+  function simulate(baseRate, headRate, runs, seed){
+    var s=seed||42; function rnd(){ s=(s*1664525+1013904223)%4294967296; return s/4294967296; }
+    var bf=0,hf=0; for(var i=0;i<runs;i++){ if(rnd()<baseRate) bf++; if(rnd()<headRate) hf++; }
+    return {baseRuns:runs,baseFail:bf,headRuns:runs,headFail:hf};
+  }
+  // parse a run log: lines like "base pass" / "head fail" / "base: FAIL" / "[head] exit 1"
+  function parseRunLog(txt){
+    var r={baseRuns:0,baseFail:0,headRuns:0,headFail:0};
+    (txt||"").split(/\r?\n/).forEach(function(l){
+      var m=l.match(/\b(base|head)\b/i); if(!m) return;
+      var side=m[1].toLowerCase();
+      var fail=/\b(fail|failed|error|exit\s*[1-9]|timeout|ko)\b/i.test(l);
+      var pass=/\b(pass|passed|ok|exit\s*0)\b/i.test(l);
+      if(!fail&&!pass) return;
+      if(side==="base"){ r.baseRuns++; if(fail) r.baseFail++; } else { r.headRuns++; if(fail) r.headFail++; }
+    });
+    return r;
+  }
+
+  // ---------- i18n verifier ----------
+  var PH=/\{\{\s*[\w.]+\s*\}\}|\{[\w.]+\}|%\(\w+\)[sd]|%[sdif]|\$\{[\w.]+\}|%\d+\$[sd]/g;
+  var TAG=/<\/?[a-zA-Z][^>]*>/g;
+  function multiset(arr){ var m={}; (arr||[]).forEach(function(t){ var k=t.replace(/\s+/g,' ').trim(); m[k]=(m[k]||0)+1; }); return m; }
+  function sameMultiset(a,b){ var ka=Object.keys(a),kb=Object.keys(b); if(ka.length!==kb.length) return false; return ka.every(function(k){return a[k]===b[k];}); }
+  function i18nVerdict(src, tgt, opts){
+    opts=opts||{}; var ratio=opts.maxRatio||1.6, maxlen=opts.maxlen||{}, glossary=(opts.glossary||[]).map(function(s){return s.toLowerCase();});
+    var defects=[], checked=0;
+    Object.keys(src).forEach(function(k){
+      var s=String(src[k]==null?"":src[k]), t=tgt[k];
+      checked++;
+      if(t===undefined||t===null||String(t).trim()===""){ defects.push({key:k,type:"missing",src:s,tgt:""}); return; }
+      t=String(t);
+      var words=s.trim().split(/\s+/).filter(Boolean);
+      var hasLetters=/[A-Za-zÀ-ÿ]/.test(s);
+      if(hasLetters && words.length>=2 && t.trim().toLowerCase()===s.trim().toLowerCase() && glossary.indexOf(s.trim().toLowerCase())<0) defects.push({key:k,type:"leftover",src:s,tgt:t});
+      if(!sameMultiset(multiset(s.match(TAG)),multiset(t.match(TAG)))) defects.push({key:k,type:"tag",src:s,tgt:t});
+      if(!sameMultiset(multiset(s.match(PH)),multiset(t.match(PH)))) defects.push({key:k,type:"placeholder",src:s,tgt:t});
+      if((s.match(/\n/g)||[]).length!==(t.match(/\n/g)||[]).length) defects.push({key:k,type:"newline",src:s,tgt:t});
+      if(t!==t.normalize("NFC")) defects.push({key:k,type:"nfc",src:s,tgt:t});
+      var lim = maxlen[k]!==undefined ? maxlen[k] : (s.length>=4 ? Math.ceil(s.length*ratio)+2 : Infinity);
+      if(t.length>lim) defects.push({key:k,type:"length",src:s,tgt:t,limit:lim});
+    });
+    var extra=Object.keys(tgt).filter(function(k){return !(k in src);});
+    var blocking=defects.filter(function(d){return d.type!=="length";}).length;
+    var res={verifier:"i18n",outcome: defects.length===0?"PASS":(blocking?"FAIL":"UNSURE"),
+      detail: defects.length===0 ? "CLEAR: "+checked+" strings checked, no defect" : (blocking? "FAIL: "+blocking+" blocking defect(s)" : "REVIEW: only length overflows")+ " in "+checked+" strings",
+      evidence: defects.slice(0,200), extraKeys:extra, checked:checked, guards:[], needs_human: defects.length>0};
+    return res;
+  }
+
+  // ---------- upgrade verifier (package-level facts) ----------
+  function semverParse(v){ var m=String(v).replace(/^[\^~=v\s]+/,'').match(/^(\d+)\.(\d+)\.(\d+)/); return m?[+m[1],+m[2],+m[3]]:null; }
+  function semverCmp(a,b){ var A=semverParse(a),B=semverParse(b); if(!A||!B) return 0; for(var i=0;i<3;i++){ if(A[i]!==B[i]) return A[i]-B[i]; } return 0; }
+  function isEsmOnly(pkg){
+    if(!pkg) return false;
+    var hasCjs=false;
+    if(pkg.type!=="module") return false;
+    function walk(e){ if(!e) return; if(typeof e==="string"){ if(/\.cjs$/.test(e)) hasCjs=true; return; } if(typeof e==="object"){ if(e.require) hasCjs=true; Object.keys(e).forEach(function(k){ walk(e[k]); }); } }
+    walk(pkg.exports);
+    if(pkg.main && /\.cjs$/.test(pkg.main)) hasCjs=true;
+    return !hasCjs;
+  }
+  function exportSubpaths(pkg){ var e=pkg&&pkg.exports; if(!e||typeof e!=="object") return null; return Object.keys(e).filter(function(k){return k[0]==='.';}); }
+  function matchSubpath(subpaths, want){ // want like "./v4"; support trailing /* patterns
+    return subpaths.some(function(p){ if(p===want) return true; if(p.indexOf('*')>=0){ var re=new RegExp('^'+p.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace('\\*','.*')+'$'); return re.test(want); } return false; });
+  }
+  function scanUsage(code,name){
+    var u={cjs:0,esm:0,deep:{}};
+    var re=new RegExp("(require\\(\\s*['\"]|from\\s+['\"]|import\\(\\s*['\"]|import\\s+['\"])("+name.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&')+")(\\/[^'\"]+)?['\"]","g"), m;
+    while((m=re.exec(code||""))){ if(/^require/.test(m[1])) u.cjs++; else u.esm++; if(m[3]) u.deep[m[3]]=(u.deep[m[3]]||0)+1; }
+    return u;
+  }
+  function upgradeVerdict(name, oldPkg, newPkg, code){
+    var findings=[], usage=scanUsage(code,name);
+    var oldV=oldPkg.version, newV=newPkg.version;
+    var major = semverParse(oldV)&&semverParse(newV)&&semverParse(newV)[0]>semverParse(oldV)[0];
+    var oldEsm=isEsmOnly(oldPkg), newEsm=isEsmOnly(newPkg);
+    if(!oldEsm && newEsm){ findings.push({fact:"package became ESM-only", old:oldPkg.type||"commonjs", neu:"module (no require entry)", breaks: usage.cjs>0, where: usage.cjs>0 ? usage.cjs+" require() call(s) in your code" : "no require() found in pasted code"}); }
+    var oe=exportSubpaths(oldPkg), ne=exportSubpaths(newPkg);
+    Object.keys(usage.deep).forEach(function(d){
+      var want='.'+d; var oldOk = oe? matchSubpath(oe,want) : true; var newOk = ne? matchSubpath(ne,want) : true;
+      if(oldOk && !newOk) findings.push({fact:"deep import path no longer exported", old:name+d+" (resolvable)", neu:"not in exports map", breaks:true, where:usage.deep[d]+" import(s) of "+name+d});
+    });
+    if(oldPkg.bin && !newPkg.bin) findings.push({fact:"CLI binary removed", old:Object.keys(typeof oldPkg.bin==="object"?oldPkg.bin:{bin:1}).join(", "), neu:"none", breaks:false, where:"scripts that call the binary"});
+    var oN=(oldPkg.engines||{}).node, nN=(newPkg.engines||{}).node; if(nN && nN!==oN) findings.push({fact:"required Node version changed", old:oN||"unspecified", neu:nN, breaks:false, where:"CI image and runtime"});
+    var op=Object.keys(oldPkg.peerDependencies||{}), np=Object.keys(newPkg.peerDependencies||{}); var addedPeers=np.filter(function(p){return op.indexOf(p)<0;}); if(addedPeers.length) findings.push({fact:"new peer dependencies", old:op.join(", ")||"none", neu:addedPeers.join(", "), breaks:false, where:"package.json"});
+    if(oldPkg.main && !newPkg.main && !newPkg.exports) findings.push({fact:"main entry removed", old:oldPkg.main, neu:"none", breaks:true, where:"every import"});
+    if(newPkg.deprecated) findings.push({fact:"version is deprecated", old:"", neu:String(newPkg.deprecated), breaks:false, where:"registry"});
+    var breaks=findings.filter(function(f){return f.breaks;}).length;
+    var outcome = breaks? "FAIL" : (findings.length||major ? "UNSURE" : "PASS");
+    var detail = breaks? "BREAKS: "+breaks+" package-level break(s) hit your code" : (findings.length||major ? "REVIEW: "+(major?"major upgrade, ":"")+findings.length+" package-level change(s), API members not checked here" : "CLEAR at package level: "+(usage.cjs+usage.esm)+" import(s) found, no package-level break");
+    return {verifier:"upgrade",target:name+" "+oldV+" -> "+newV,outcome:outcome,detail:detail,evidence:findings,usage:usage,guards:[],needs_human:outcome!=="PASS",
+      limits:"Package-level facts only (type, exports, bin, engines, peers, main). Member-level API checks (removed functions, changed signatures) need the full Upgrade Radar engine."};
+  }
+  function verdictLine(v){
+    var o={schema:"verdict-gate/1",verifier:v.verifier,target:v.target||null,outcome:v.outcome,detail:v.detail,evidence:v.evidence,guards:v.guards||[],needs_human:!!v.needs_human};
+    if(v.limits) o.limits=v.limits;
+    return "VERDICT "+JSON.stringify(o);
+  }
+  return {fisherOneSided:fisherOneSided,upperBound:upperBound,runsNeeded:runsNeeded,flakyVerdict:flakyVerdict,diffGuard:diffGuard,simulate:simulate,parseRunLog:parseRunLog,i18nVerdict:i18nVerdict,upgradeVerdict:upgradeVerdict,scanUsage:scanUsage,isEsmOnly:isEsmOnly,semverCmp:semverCmp,verdictLine:verdictLine};
+})();
+
+
+</script>
+<script>
+// ---------- i18n of the UI ----------
+var T={
+it:{
+ eyebrow:"Cancello di verifica per merge request · tre verificatori deterministici · un solo formato di verdetto",
+ thesis:"L'agente propone la correzione. Il verificatore decide se passa. Qui giri i verificatori a mano, leggi le prove e ottieni la riga VERDICT che il flusso GitLab userà.",
+ tab_flaky:"Test instabili", tab_upgrade:"Aggiornamento dipendenze", tab_i18n:"Traduzioni", tab_gitlab:"Verdetto e file GitLab",
+ btn_verify:"Verifica", btn_copy:"Copia", empty:"Nessun verdetto ancora. Compila a sinistra e premi Verifica.",
+ f_h:"Il fix del test instabile ha funzionato, o è stato un colpo di fortuna?",
+ f_intro:"Inserisci quante esecuzioni hai fatto sul ramo base e sul ramo della MR e quante sono fallite. Il verdetto usa il test esatto di Fisher a una coda e il limite superiore di Clopper-Pearson al 95%. L'alfa viene divisa per il numero di sguardi (Bonferroni).",
+ f_counts:"Conteggi", f_base_runs:"Esecuzioni base", f_base_fail:"Fallimenti base", f_head_runs:"Esecuzioni MR", f_head_fail:"Fallimenti MR",
+ f_alpha:"Alfa", f_looks:"Sguardi", f_target:"Tasso residuo obiettivo",
+ f_log:"Oppure incolla il log delle esecuzioni (una riga per esecuzione, con base/head e pass/fail): sostituisce i conteggi",
+ f_diff:"Diff del file di test (facoltativo): la guardia cerca asserzioni rimosse o allentate, skip, retry, timeout",
+ f_broken:"Le prime 6 esecuzioni di un lato falliscono tutte con lo stesso errore (BROKEN)",
+ f_sim:"Simula 100+100", f_ex1:"Esempio: placebo", f_ex2:"Esempio: fix vero", f_ex3:"Esempio: test indebolito",
+ f_p:"p (Fisher, una coda)", f_ub:"Limite sup. 95% tasso residuo", f_alpha_used:"Alfa usata", f_runs:"Esecuzioni pulite necessarie",
+ u_h:"Se aggiorno questa dipendenza, cosa smette di funzionare?",
+ u_intro:"Confronta i fatti a livello di pacchetto fra due versioni pubblicate su npm e li incrocia con il codice che incolli: pacchetto diventato solo ESM mentre tu usi require, import profondi non più esportati, binario rimosso, Node richiesto, nuove peer dependency.",
+ u_name:"Pacchetto", u_old:"Versione attuale", u_new:"Versione nuova (vuoto = ultima)",
+ u_code:"Il tuo codice che usa il pacchetto (incolla uno o più file)",
+ u_fetch:"Leggi da npm e verifica", u_manual:"Senza rete: incolla i due package.json", u_ex:"Esempio chalk 4 → 6",
+ u_oldpkg:"package.json della versione attuale", u_newpkg:"package.json della versione nuova",
+ u_note:"Lettura dal registro npm pubblico, nessuna chiave. Se il browser blocca la richiesta, usa la modalità senza rete.",
+ u_fact:"Fatto", u_oldc:"Prima", u_newc:"Dopo", u_where:"Dove ti tocca", u_breaks:"Rompe",
+ u_usage:"Uso trovato nel codice", u_cjs:"require()", u_esm:"import", u_deep:"import profondi",
+ u_limits:"Limite dichiarato: qui si controllano solo i fatti a livello di pacchetto. Le funzioni rimosse o le firme cambiate le trova il motore completo Upgrade Radar, che gira nel job CI.",
+ i_h:"Le traduzioni sono intere, o qualcosa si è perso per strada?",
+ i_intro:"Incolla il catalogo sorgente e quello tradotto (JSON chiave → testo). Controlli deterministici: chiavi mancanti, stringhe lasciate nella lingua di origine, tag HTML e segnaposto non conservati, a capo diversi, Unicode non normalizzato, lunghezze che sforano.",
+ i_src:"Catalogo sorgente (JSON)", i_tgt:"Catalogo tradotto (JSON)", i_ratio:"Rapporto massimo di lunghezza", i_gloss:"Glossario, parole che restano uguali (separate da virgola)",
+ i_ex:"Ricarica esempio", i_key:"Chiave", i_type:"Difetto", i_srcc:"Sorgente", i_tgtc:"Tradotto", i_extra:"Chiavi in più nel tradotto, assenti nel sorgente:",
+ i_t_missing:"mancante", i_t_leftover:"residuo lingua origine", i_t_tag:"tag HTML", i_t_placeholder:"segnaposto", i_t_newline:"a capo", i_t_nfc:"Unicode NFD", i_t_length:"lunghezza",
+ g_h:"Il verdetto comune e i file per GitLab",
+ g_intro:"Ogni verificatore stampa nel log del job una riga VERDICT con lo stesso schema. Il flusso Duo la legge e agisce. Qui trovi l'ultimo verdetto prodotto, il commento pronto per la MR e i file del progetto da copiare nel repository.",
+ g_last:"Ultimo verdetto (riga per il log del job)", g_none:"Nessun verdetto ancora.", g_copy_md:"Copia commento MR", g_dl_json:"Scarica .json",
+ g_md:"Commento per la merge request (Markdown)", g_files:"File del progetto GitLab", g_pick:"File", g_dl_file:"Scarica file",
+ g_note:"Lo schema del flusso Duo va confermato sulla documentazione di GitLab. I job CI sono standard GitLab e non dipendono da Duo.",
+ md_outcome:"Esito", md_detail:"Dettaglio", md_evidence:"Prove", md_guards:"Guardie", md_human:"Serve una persona", yes:"sì", no:"no",
+ copied:"Copiato", dl_blocked:"Download non disponibile in questo contenitore: usa Copia", fetch_err:"Richiesta al registro npm fallita: ",
+ ver_missing:"Versione non trovata nel registro: ", json_err:"JSON non valido: ",
+ footer:"Verdict Gate, nucleo deterministico in un file. Nessuna chiave, nessun account. I verificatori flaky e i18n lavorano interamente offline; upgrade legge il registro npm pubblico. Costruito l'8 ottobre 2026."
+},
+en:{
+ eyebrow:"Merge-request verification gate · three deterministic verifiers · one verdict format",
+ thesis:"The agent proposes the fix. The verifier decides whether it passes. Here you run the verifiers by hand, read the evidence and get the VERDICT line the GitLab flow will use.",
+ tab_flaky:"Flaky tests", tab_upgrade:"Dependency upgrade", tab_i18n:"Translations", tab_gitlab:"Verdict and GitLab files",
+ btn_verify:"Verify", btn_copy:"Copy", empty:"No verdict yet. Fill in the left side and press Verify.",
+ f_h:"Did the flaky-test fix work, or was it a fluke?",
+ f_intro:"Enter how many runs you did on the base branch and on the MR branch and how many failed. The verdict uses the one-sided Fisher exact test and the 95% Clopper-Pearson upper bound. Alpha is divided by the number of looks (Bonferroni).",
+ f_counts:"Counts", f_base_runs:"Base runs", f_base_fail:"Base failures", f_head_runs:"MR runs", f_head_fail:"MR failures",
+ f_alpha:"Alpha", f_looks:"Looks", f_target:"Target residual rate",
+ f_log:"Or paste the run log (one line per run, with base/head and pass/fail): it replaces the counts",
+ f_diff:"Diff of the test file (optional): the guard looks for removed or loosened assertions, skips, retries, timeouts",
+ f_broken:"The first 6 runs on one side all fail with the same error (BROKEN)",
+ f_sim:"Simulate 100+100", f_ex1:"Example: placebo", f_ex2:"Example: real fix", f_ex3:"Example: weakened test",
+ f_p:"p (Fisher, one-sided)", f_ub:"95% upper bound of residual rate", f_alpha_used:"Alpha used", f_runs:"Clean runs needed",
+ u_h:"If I upgrade this dependency, what stops working?",
+ u_intro:"Compares package-level facts between two versions published on npm and crosses them with the code you paste: package turned ESM-only while you use require, deep imports no longer exported, binary removed, Node requirement, new peer dependencies.",
+ u_name:"Package", u_old:"Current version", u_new:"New version (empty = latest)",
+ u_code:"Your code that uses the package (paste one or more files)",
+ u_fetch:"Read from npm and verify", u_manual:"Offline: paste the two package.json files", u_ex:"Example chalk 4 → 6",
+ u_oldpkg:"package.json of the current version", u_newpkg:"package.json of the new version",
+ u_note:"Reads the public npm registry, no key. If the browser blocks the request, use offline mode.",
+ u_fact:"Fact", u_oldc:"Before", u_newc:"After", u_where:"Where it hits you", u_breaks:"Breaks",
+ u_usage:"Usage found in code", u_cjs:"require()", u_esm:"import", u_deep:"deep imports",
+ u_limits:"Declared limit: only package-level facts are checked here. Removed functions or changed signatures are found by the full Upgrade Radar engine, which runs in the CI job.",
+ i_h:"Are the translations complete, or did something get lost on the way?",
+ i_intro:"Paste the source catalog and the translated one (JSON key → text). Deterministic checks: missing keys, strings left in the source language, HTML tags and placeholders not preserved, different line breaks, non-normalized Unicode, lengths that overflow.",
+ i_src:"Source catalog (JSON)", i_tgt:"Translated catalog (JSON)", i_ratio:"Maximum length ratio", i_gloss:"Glossary, words that stay the same (comma separated)",
+ i_ex:"Reload example", i_key:"Key", i_type:"Defect", i_srcc:"Source", i_tgtc:"Translated", i_extra:"Extra keys in the translation, absent from the source:",
+ i_t_missing:"missing", i_t_leftover:"source-language leftover", i_t_tag:"HTML tag", i_t_placeholder:"placeholder", i_t_newline:"line break", i_t_nfc:"Unicode NFD", i_t_length:"length",
+ g_h:"The shared verdict and the GitLab files",
+ g_intro:"Every verifier prints one VERDICT line with the same schema to the job log. The Duo flow reads it and acts. Here you find the last verdict produced, the ready-made MR comment and the project files to copy into the repository.",
+ g_last:"Last verdict (line for the job log)", g_none:"No verdict yet.", g_copy_md:"Copy MR comment", g_dl_json:"Download .json",
+ g_md:"Merge request comment (Markdown)", g_files:"GitLab project files", g_pick:"File", g_dl_file:"Download file",
+ g_note:"The Duo flow schema must be confirmed against the GitLab documentation. The CI jobs are standard GitLab and do not depend on Duo.",
+ md_outcome:"Outcome", md_detail:"Detail", md_evidence:"Evidence", md_guards:"Guards", md_human:"Needs a human", yes:"yes", no:"no",
+ copied:"Copied", dl_blocked:"Download not available in this container: use Copy", fetch_err:"npm registry request failed: ",
+ ver_missing:"Version not found in registry: ", json_err:"Invalid JSON: ",
+ footer:"Verdict Gate, deterministic core in one file. No key, no account. The flaky and i18n verifiers work fully offline; upgrade reads the public npm registry. Built on 8 October 2026."
+}};
+var lang='en';
+function t(k){ return (T[lang][k]!==undefined?T[lang][k]:T.it[k])||k; }
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-t]').forEach(function(el){ if(!el.classList.contains('empty')||!el.dataset.filled) el.textContent=t(el.dataset.t); });
+  document.getElementById('lang-it').setAttribute('aria-pressed',lang==='it'?'true':'false');
+  document.getElementById('lang-en').setAttribute('aria-pressed',lang==='en'?'true':'false');
+  try{localStorage.setItem('vg-lang',lang);}catch(e){}
+  renderFiles();
+}
+document.getElementById('lang-it').onclick=function(){lang='it';applyLang();};
+document.getElementById('lang-en').onclick=function(){lang='en';applyLang();};
+try{ var sl=localStorage.getItem('vg-lang'); if(sl==='it') lang='it'; }catch(e){}
+
+// ---------- tabs ----------
+var tabs=document.querySelectorAll('nav.tabs button'), panes=document.querySelectorAll('section.pane');
+function showTab(id){ tabs.forEach(function(b){b.setAttribute('aria-selected',b.dataset.tab===id?'true':'false');}); panes.forEach(function(p){p.hidden=p.id!==id;}); try{localStorage.setItem('vg-tab',id);}catch(e){} }
+tabs.forEach(function(b){ b.onclick=function(){ showTab(b.dataset.tab); }; });
+(function(){ var s=null; try{s=localStorage.getItem('vg-tab');}catch(e){} var h=(location.hash||'').slice(1); if(h&&document.getElementById(h)) s=h; showTab(s&&document.getElementById(s)?s:'flaky'); if(h){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} } setTimeout(function(){ window.scrollTo(0,0); },0); })();
+
+// ---------- helpers ----------
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function toast(msg){ var el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(function(){el.classList.remove('show');},1600); }
+function copyText(txt){ var done=function(){toast(t('copied'));}; if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,function(){fallbackCopy(txt);done();}); } else { fallbackCopy(txt); done(); } }
+function fallbackCopy(txt){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+function download(name,txt,type){ try{ var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:type||'text/plain'})); a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(a.href);},2000); }catch(e){ toast(t('dl_blocked')); } }
+var lastVerdict=null;
+function setLast(v){ lastVerdict=v; var line=VG.verdictLine(v); var pre=document.getElementById('g-verdict'); pre.textContent=line; pre.classList.remove('empty'); pre.dataset.filled='1'; var md=document.getElementById('g-md'); md.textContent=mrComment(v); md.classList.remove('empty'); md.dataset.filled='1'; }
+function mrComment(v){
+  var rows=(v.evidence||[]).map(function(e){ return '| '+Object.keys(e).map(function(k){return k+': '+esc0(e[k]);}).join(' · ')+' |'; }).join('\n');
+  return '### Verdict Gate · '+v.verifier+(v.target?' · `'+v.target+'`':'')+'\n\n'+
+    '**'+t('md_outcome')+':** '+v.outcome+'  \n**'+t('md_detail')+':** '+v.detail+'\n\n'+
+    '**'+t('md_evidence')+'**\n\n| |\n|---|\n'+(rows||'| - |')+'\n\n'+
+    '**'+t('md_guards')+':** '+((v.guards&&v.guards.length)?v.guards.join('; '):'-')+'  \n**'+t('md_human')+':** '+(v.needs_human?t('yes'):t('no'))+
+    (v.limits?'\n\n_'+v.limits+'_':'')+'\n\n<!-- verdict-gate/1 -->';
+}
+function esc0(x){ return typeof x==='object'?JSON.stringify(x):String(x); }
+var OUT_ICON={PASS:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7"/></svg>',FAIL:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/></svg>',UNSURE:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.7M12 17h.01"/></svg>',BROKEN:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M7 12h10"/></svg>'};
+function outHead(v){ return '<div class="out '+v.outcome+'">'+OUT_ICON[v.outcome]+'<span class="big">'+esc(v.outcome)+'</span></div><div class="detail">'+esc(v.detail)+'</div>'; }
+function verdictFooter(v){ return '<h3>VERDICT</h3><pre>'+esc(VG.verdictLine(v))+'</pre><div class="btns"><button class="btn sec" onclick="copyText(VG.verdictLine(lastVerdict))">'+esc(t('btn_copy'))+'</button><button class="btn ghost" onclick="copyText(mrComment(lastVerdict))">'+esc(t('g_copy_md'))+'</button></div>'; }
+
+// ---------- flaky ----------
+function num(id){ return Math.max(0,parseInt(document.getElementById(id).value,10)||0); }
+function runFlaky(){
+  var o={baseRuns:num('f-br'),baseFail:num('f-bf'),headRuns:num('f-hr'),headFail:num('f-hf'),alpha:parseFloat(document.getElementById('f-alpha').value)||0.05,looks:num('f-looks')||1,target:parseFloat(document.getElementById('f-target').value)||0.05,conf:0.95};
+  var log=document.getElementById('f-log').value.trim();
+  if(log){ var r=VG.parseRunLog(log); if(r.baseRuns||r.headRuns){ o.baseRuns=r.baseRuns;o.baseFail=r.baseFail;o.headRuns=r.headRuns;o.headFail=r.headFail; ['f-br','f-bf','f-hr','f-hf'].forEach(function(id,i){document.getElementById(id).value=[r.baseRuns,r.baseFail,r.headRuns,r.headFail][i];}); } }
+  o.brokenBase=document.getElementById('f-broken').checked;
+  o.guards=VG.diffGuard(document.getElementById('f-diff').value);
+  if(o.baseFail>o.baseRuns) o.baseFail=o.baseRuns; if(o.headFail>o.headRuns) o.headFail=o.headRuns;
+  var v=VG.flakyVerdict(o); v.target=document.getElementById('f-log').value.match(/::\S+|test_\w+/)?RegExp.lastMatch:'flaky test';
+  var h=outHead(v);
+  h+='<div class="tbl"><table><tr><th></th><th class="num">'+t('f_base_runs')+'</th><th class="num">'+t('f_base_fail')+'</th><th class="num">'+t('f_head_runs')+'</th><th class="num">'+t('f_head_fail')+'</th></tr><tr><td>runs</td><td class="num">'+o.baseRuns+'</td><td class="num">'+o.baseFail+'</td><td class="num">'+o.headRuns+'</td><td class="num">'+o.headFail+'</td></tr></table></div>';
+  h+='<div class="tbl"><table>';
+  if(v.p!==undefined) h+='<tr><td>'+t('f_p')+'</td><td class="num">'+v.p.toPrecision(3)+'</td></tr>';
+  h+='<tr><td>'+t('f_alpha_used')+'</td><td class="num">'+v.alphaUsed.toPrecision(3)+'</td></tr>';
+  if(v.upperBound!==undefined) h+='<tr><td>'+t('f_ub')+'</td><td class="num">'+(v.upperBound*100).toFixed(2)+'%</td></tr>';
+  if(v.runsNeeded) h+='<tr><td>'+t('f_runs')+'</td><td class="num">'+v.runsNeeded+'</td></tr>';
+  h+='</table></div>';
+  if(v.guards.length) h+='<ul class="guards">'+v.guards.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul>';
+  setLast(v); h+=verdictFooter(v);
+  document.getElementById('f-out').innerHTML=h;
+}
+document.getElementById('f-run').onclick=runFlaky;
+document.getElementById('f-sim').onclick=function(){ var r=VG.simulate(0.14,0.14,100,Date.now()%100000); document.getElementById('f-log').value=''; document.getElementById('f-br').value=r.baseRuns; document.getElementById('f-bf').value=r.baseFail; document.getElementById('f-hr').value=r.headRuns; document.getElementById('f-hf').value=r.headFail; runFlaky(); };
+function fEx(b,bf,h,hf,diff){ document.getElementById('f-log').value=''; document.getElementById('f-broken').checked=false; document.getElementById('f-br').value=b; document.getElementById('f-bf').value=bf; document.getElementById('f-hr').value=h; document.getElementById('f-hf').value=hf; document.getElementById('f-diff').value=diff||''; runFlaky(); }
+document.getElementById('f-ex1').onclick=function(){ fEx(60,8,60,6,'--- a/src/checkout.py\n+++ b/src/checkout.py\n+    time.sleep(0.01)'); };
+document.getElementById('f-ex2').onclick=function(){ fEx(60,11,60,0,'--- a/src/checkout.py\n+++ b/src/checkout.py\n-    best = sorted(set(codes))[-1]\n+    best = max(set(codes), key=COUPONS.get)'); };
+document.getElementById('f-ex3').onclick=function(){ fEx(60,15,60,0,'--- a/tests/test_checkout.py\n+++ b/tests/test_checkout.py\n-    assert total == 42\n+    assert total >= 30'); };
+
+// ---------- upgrade ----------
+var CHALK_OLD={name:"chalk",version:"4.1.2",main:"source",engines:{node:">=10"}};
+var CHALK_NEW={name:"chalk",version:"6.0.1",type:"module",exports:"./source/index.js",engines:{node:">=20"}};
+function renderUpgrade(v){
+  var h=outHead(v);
+  h+='<div class="tbl"><table><tr><th>'+t('u_fact')+'</th><th>'+t('u_oldc')+'</th><th>'+t('u_newc')+'</th><th>'+t('u_where')+'</th><th>'+t('u_breaks')+'</th></tr>';
+  if(!v.evidence.length) h+='<tr><td colspan="5" class="empty">-</td></tr>';
+  v.evidence.forEach(function(f){ h+='<tr><td>'+esc(f.fact)+'</td><td><code>'+esc(f.old)+'</code></td><td><code>'+esc(f.neu)+'</code></td><td>'+esc(f.where)+'</td><td>'+(f.breaks?'<span class="pill bad">BREAKS</span>':'<span class="pill warn">REVIEW</span>')+'</td></tr>'; });
+  h+='</table></div>';
+  var u=v.usage; h+='<p class="note">'+t('u_usage')+': '+t('u_cjs')+' '+u.cjs+' · '+t('u_esm')+' '+u.esm+' · '+t('u_deep')+' '+(Object.keys(u.deep).join(', ')||'-')+'</p>';
+  h+='<div class="limits">'+esc(t('u_limits'))+'</div>';
+  setLast(v); h+=verdictFooter(v);
+  document.getElementById('u-out').innerHTML=h;
+}
+document.getElementById('u-ex').onclick=function(){ document.getElementById('u-name').value='chalk'; document.getElementById('u-old').value='4.1.2'; document.getElementById('u-new').value='6.0.1'; document.getElementById('u-oldpkg').value=JSON.stringify(CHALK_OLD,null,2); document.getElementById('u-newpkg').value=JSON.stringify(CHALK_NEW,null,2); document.getElementById('u-manual-box').hidden=false; runUpgradeManual(); };
+document.getElementById('u-manual').onclick=function(){ var b=document.getElementById('u-manual-box'); b.hidden=!b.hidden; };
+function runUpgradeManual(){ var o,n; try{ o=JSON.parse(document.getElementById('u-oldpkg').value); n=JSON.parse(document.getElementById('u-newpkg').value); }catch(e){ toast(t('json_err')+e.message); return; } renderUpgrade(VG.upgradeVerdict(document.getElementById('u-name').value.trim(),o,n,document.getElementById('u-code').value)); }
+document.getElementById('u-run').onclick=runUpgradeManual;
+document.getElementById('u-fetch').onclick=function(){
+  var name=document.getElementById('u-name').value.trim(), oldV=document.getElementById('u-old').value.trim().replace(/^[\^~]/,''), newV=document.getElementById('u-new').value.trim();
+  var btn=this; btn.disabled=true;
+  fetch('https://registry.npmjs.org/'+encodeURIComponent(name).replace('%40','@'),{headers:{'Accept':'application/json'}}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(doc){
+    var versions=doc.versions||{}; if(!newV) newV=(doc['dist-tags']||{}).latest;
+    var o=versions[oldV], n=versions[newV];
+    if(!o) throw new Error(t('ver_missing')+oldV); if(!n) throw new Error(t('ver_missing')+newV);
+    document.getElementById('u-new').value=newV;
+    document.getElementById('u-oldpkg').value=JSON.stringify(pick(o),null,2); document.getElementById('u-newpkg').value=JSON.stringify(pick(n),null,2);
+    renderUpgrade(VG.upgradeVerdict(name,o,n,document.getElementById('u-code').value));
+  }).catch(function(e){ toast(t('fetch_err')+e.message); document.getElementById('u-manual-box').hidden=false; }).then(function(){ btn.disabled=false; });
+};
+function pick(p){ var o={}; ['name','version','type','main','module','exports','bin','engines','peerDependencies','deprecated'].forEach(function(k){ if(p[k]!==undefined) o[k]=p[k]; }); return o; }
+
+// ---------- i18n ----------
+var I18N_EX={src:document.getElementById('i-src').value,tgt:document.getElementById('i-tgt').value};
+function runI18n(){
+  var s,g; try{ s=JSON.parse(document.getElementById('i-src').value); g=JSON.parse(document.getElementById('i-tgt').value); }catch(e){ toast(t('json_err')+e.message); return; }
+  var gl=document.getElementById('i-gloss').value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+  var v=VG.i18nVerdict(s,g,{maxRatio:parseFloat(document.getElementById('i-ratio').value)||1.6,glossary:gl}); v.target=Object.keys(s).length+' keys';
+  var h=outHead(v);
+  h+='<div class="tbl"><table><tr><th>'+t('i_key')+'</th><th>'+t('i_type')+'</th><th>'+t('i_srcc')+'</th><th>'+t('i_tgtc')+'</th></tr>';
+  if(!v.evidence.length) h+='<tr><td colspan="4" class="empty">-</td></tr>';
+  v.evidence.forEach(function(d){ h+='<tr><td><code>'+esc(d.key)+'</code></td><td><span class="pill '+(d.type==='length'?'warn':'bad')+'">'+esc(t('i_t_'+d.type))+(d.limit?' &gt; '+d.limit:'')+'</span></td><td>'+esc(d.src)+'</td><td>'+esc(d.tgt)+'</td></tr>'; });
+  h+='</table></div>';
+  if(v.extraKeys.length) h+='<p class="note">'+t('i_extra')+' '+v.extraKeys.map(function(k){return '<code>'+esc(k)+'</code>';}).join(', ')+'</p>';
+  var vv={verifier:v.verifier,target:v.target,outcome:v.outcome,detail:v.detail,evidence:v.evidence.map(function(d){return {key:d.key,type:d.type};}),guards:[],needs_human:v.needs_human};
+  setLast(vv); h+=verdictFooter(vv);
+  document.getElementById('i-out').innerHTML=h;
+}
+document.getElementById('i-run').onclick=runI18n;
+document.getElementById('i-ex').onclick=function(){ document.getElementById('i-src').value=I18N_EX.src; document.getElementById('i-tgt').value=I18N_EX.tgt; runI18n(); };
+
+// ---------- gitlab files ----------
+var FILES={
+verify:function(){return [
+'# templates/verify.yml  (CI/CD component: include it in .gitlab-ci.yml)',
+'spec:',
+'  inputs:',
+'    stage: { default: test }',
+'    runs:  { default: "100" }',
+'---',
+'verdict-gate:verify:',
+'  stage: $[[ inputs.stage ]]',
+'  image: python:3.12          # full image, git included; node installed below for the upgrade verifier',
+'  variables: { GIT_DEPTH: "0", VG_RUNS: $[[ inputs.runs ]] }',
+'  rules:',
+'    - if: \'$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(upgrade|flaky-fix|i18n)/\'',
+'  before_script:',
+'    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"',
+'    - apt-get update -qq && apt-get install -y -qq nodejs npm > /dev/null',
+'  script:',
+'    - |',
+'      case "$CI_MERGE_REQUEST_LABELS" in',
+'        *upgrade*)   node verifiers/upgrade/bin/upgrade-radar.mjs mr --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --json verdict.json ;;',
+'        *flaky-fix*) python3 verifiers/flaky/fixorfluke.pyz ci-verify --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --runs "$VG_RUNS" --json verdict.json ;;',
+'        *i18n*)      python3 verifiers/i18n/i18n_gate.py --base "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --head "$CI_COMMIT_SHA" --json verdict.json ;;',
+'      esac',
+'    - python3 schema/check.py verdict.json          # conformance to verdict-v1.json, exits 1 if invalid',
+'    - echo "VERDICT $(cat verdict.json | tr -d \'\\n\')"  # the single line the Duo flow reads',
+'    - python3 schema/exit.py verdict.json           # PASS 0 · FAIL 2 · UNSURE 3 · BROKEN 5',
+'  artifacts:',
+'    when: always',
+'    paths: [verdict.json, report.html, report.md]',
+'    expose_as: "Verdict Gate report"',
+'  allow_failure:',
+'    exit_codes: [3]                                  # UNSURE warns, does not block'].join('\n');},
+monitor:function(){return [
+'# templates/monitor.yml  (scheduled pipeline, every Monday: re-measures on the main branch)',
+'verdict-gate:monitor:',
+'  stage: test',
+'  image: python:3.12',
+'  rules:',
+'    - if: \'$CI_PIPELINE_SOURCE == "schedule"\'',
+'  script:',
+'    - python3 verifiers/flaky/fixorfluke.pyz monitor --quarantine flaky-quarantine.toml --json monitor-flaky.json',
+'    - node verifiers/upgrade/bin/upgrade-radar.mjs scan . --json monitor-upgrade.json',
+'    - echo "VERDICT $(python3 schema/merge.py monitor-flaky.json monitor-upgrade.json | tr -d \'\\n\')"',
+'  artifacts: { paths: [monitor-flaky.json, monitor-upgrade.json], when: always }'].join('\n');},
+flow:function(){return [
+'# .gitlab/duo/flows/verdict-gate.yaml  (DRAFT: confirm the schema on docs.gitlab.com)',
+'name: Verdict Gate',
+'description: Reads the VERDICT line from the verify job, posts one discussion, labels the MR, proposes a fix, asks a human.',
+'triggers:',
+'  - event: pipeline            # Passed, Failed',
+'steps:',
+'  - id: read',
+'    type: tool                  # deterministic, no model',
+'    tool: get_job_logs',
+'    inputs: { job_name: "verdict-gate:verify" }',
+'  - id: extract',
+'    type: tool',
+'    tool: extract_lines_from_text',
+'    inputs: { pattern: "^VERDICT " }',
+'    stop_if_empty: true         # not our pipeline: stop, spend no credits',
+'  - id: discuss',
+'    type: agent',
+'    prompt: |',
+'      You are the Verdict Gate reporter. Copy the evidence table from the VERDICT JSON verbatim.',
+'      Add at most three sentences marked "AI hypothesis". Never change outcome or numbers.',
+'      Reuse the existing Verdict Gate discussion if one exists; never open a second one.',
+'    tools: [list_all_merge_request_notes, create_merge_request_note, reply_to_discussion, update_merge_request]',
+'  - id: fix',
+'    type: agent',
+'    when: outcome == "FAIL"',
+'    prompt: |',
+'      Using evidence[] (file, line, old, new), propose the smallest commit that removes every break.',
+'      Protected files must not change: tests/**, flaky-quarantine.toml, locales/source.json.',
+'    tools: [get_repository_file, list_merge_request_diffs, create_commit]',
+'    max_rounds: 3               # the pipeline re-runs after each commit; stop and hand over after 3',
+'  - id: approve',
+'    type: human_input',
+'    when: outcome == "PASS" && policy.hands_off == false',
+'    prompt: "Verdict is PASS. Approve the merge?"',
+'  - id: merge',
+'    type: tool',
+'    when: outcome == "PASS" && (approved || policy.hands_off)',
+'    tool: update_merge_request',
+'    inputs: { merge_when_pipeline_succeeds: true }'].join('\n');},
+policy:function(){return [
+'# verdict-gate.toml  (policy, versioned with the repo: the "configure" and "govern" stages)',
+'[gate]',
+'hands_off = false          # true: merge automatically on PASS with a green pipeline',
+'max_rounds = 3             # fix attempts before the flow hands over to a human',
+'protected = ["tests/**", "flaky-quarantine.toml", "locales/source.json"]',
+'',
+'[flaky]',
+'alpha = 0.05',
+'looks = 3                  # 100, 200, 300 runs per side; alpha / looks (Bonferroni)',
+'target = 0.05              # residual failure rate accepted, at 95% confidence',
+'weakened_test = "block"    # FIXED with a guard becomes FIXED BUT TEST WEAKENED',
+'',
+'[upgrade]',
+'fail_on = "breaks"         # REVIEW and UNVERIFIED warn, never block',
+'',
+'[i18n]',
+'max_ratio = 1.6',
+'glossary = ["OK"]',
+'languages = ["it", "en", "de", "fr", "es"]'].join('\n');},
+schema:function(){return JSON.stringify({
+ "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"verdict-gate/1","title":"Verdict Gate verdict",
+ "type":"object","required":["schema","verifier","outcome","detail","evidence","guards","needs_human"],
+ "properties":{
+  "schema":{"const":"verdict-gate/1"},
+  "verifier":{"type":"string","enum":["upgrade","flaky","i18n"]},
+  "target":{"type":["string","null"],"description":"what was judged: package and versions, test id, catalog"},
+  "outcome":{"type":"string","enum":["PASS","FAIL","UNSURE","BROKEN"]},
+  "detail":{"type":"string","description":"the verifier's own verdict name, kept verbatim"},
+  "evidence":{"type":"array","items":{"type":"object"},"description":"facts a human can re-check: file:line, counts, p, bounds"},
+  "guards":{"type":"array","items":{"type":"string"},"description":"anti-cheat findings; a PASS with guards needs a human"},
+  "needs_human":{"type":"boolean"},
+  "fix_hint":{"type":"string"},
+  "limits":{"type":"string","description":"what this verifier cannot see, printed in every report"}
+ },"additionalProperties":false},null,2);}
+};
+var FILENAMES={verify:'verify.yml',monitor:'monitor.yml',flow:'verdict-gate.yaml',policy:'verdict-gate.toml',schema:'verdict-v1.json'};
+function renderFiles(){ var k=document.getElementById('g-file').value; document.getElementById('g-file-body').textContent=FILES[k](); }
+document.getElementById('g-file').onchange=renderFiles;
+document.getElementById('g-copy-file').onclick=function(){ copyText(document.getElementById('g-file-body').textContent); };
+document.getElementById('g-dl-file').onclick=function(){ var k=document.getElementById('g-file').value; download(FILENAMES[k],FILES[k]()); };
+document.getElementById('g-copy-verdict').onclick=function(){ if(lastVerdict) copyText(VG.verdictLine(lastVerdict)); };
+document.getElementById('g-copy-md').onclick=function(){ if(lastVerdict) copyText(mrComment(lastVerdict)); };
+document.getElementById('g-dl-json').onclick=function(){ if(lastVerdict) download('verdict.json',VG.verdictLine(lastVerdict).slice(8),'application/json'); };
+
+applyLang();
+runFlaky();
+runI18n();
+(function(){ document.getElementById('u-oldpkg').value=JSON.stringify(CHALK_OLD,null,2); document.getElementById('u-newpkg').value=JSON.stringify(CHALK_NEW,null,2); document.getElementById('u-new').value='6.0.1'; runUpgradeManual(); })();
+
+</script>
+</body>
+</html>

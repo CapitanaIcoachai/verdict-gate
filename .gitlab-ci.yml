@@ -1,0 +1,31 @@
+stages: [test, package]
+include:
+  - local: templates/verify.yml
+  - local: templates/monitor.yml
+
+# The tool's own tests: statistics, schema conformance, demo verdicts.
+verdict-gate:selftest:
+  stage: test
+  image: python:3.12
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq nodejs npm git > /dev/null && (cd verifiers/upgrade && npm ci --silent)
+    - git config --global user.email ci@verdict.gate && git config --global user.name ci
+  script:
+    - python3 -m unittest -v tests/test_conformance.py
+
+# Package stage: the verifiers as downloadable artifacts and a release on tags.
+verdict-gate:package:
+  stage: package
+  image: python:3.12
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - mkdir -p dist && cp verifiers/flaky/fixorfluke.py verifiers/i18n/i18n_gate.py dist/ && tar czf dist/upgrade-radar.tgz -C verifiers upgrade --exclude node_modules
+  artifacts:
+    paths: [dist/]
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: "Verdict Gate $CI_COMMIT_TAG"

@@ -1,0 +1,29 @@
+# Verdict Gate policy. Versioned with the repository: this file is the "configure" and "govern" stage.
+[gate]
+hands_off = false            # true: merge automatically on PASS with a green pipeline (Hands-off level)
+max_rounds = 3               # fix attempts by the flow before it hands over to a human
+protected = ["**/test_*.py", "**/*.test.*", "flaky-quarantine.toml", "demo-app/locales/en.json"]
+
+[flaky]
+alpha = 0.05
+looks = 3                    # 100, 200, 300 runs per side; alpha is divided by looks (Bonferroni)
+runs = 100
+target = 0.05                # residual failure rate accepted, at 95% confidence
+weakened_test = "block"      # FIXED with a guard becomes FIXED BUT TEST WEAKENED and needs a human
+
+[upgrade]
+fail_on = "breaks"           # REVIEW and UNVERIFIED warn, never block
+
+[i18n]
+source = "demo-app/locales/en.json"
+targets = "demo-app/locales/*.json"
+max_ratio = 1.6
+glossary = ["OK"]
+
+[perf]
+runs = 30
+min_gain = 0.05              # median speedup needed to call FASTER
+alpha = 0.05
+
+[api]
+contract = "demo-app/py-api/api-contract.json"

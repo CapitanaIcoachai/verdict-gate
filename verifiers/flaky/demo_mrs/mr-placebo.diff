@@ -1,0 +1,12 @@
+diff --git a/shop/checkout.py b/shop/checkout.py
+index a0497e8..123334e 100644
+--- a/shop/checkout.py
++++ b/shop/checkout.py
+@@ -6,5 +6,7 @@ def best_coupon(codes):
+         if COUPONS[c] > COUPONS[best]:
+             best = c
+     return best
++import time
+ def total(price, codes):
++    time.sleep(0.01)  # wait for cart state to settle
+     return round(price * (100 - COUPONS[best_coupon(codes)]) / 100, 2)
